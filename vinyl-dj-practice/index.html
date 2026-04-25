@@ -1,0 +1,906 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Vinyl DJ Practice</title>
+<style id="app-styles">
+:root{
+  --bg:#0b0d10; --panel:#15191f; --panel-2:#1c222a; --ink:#e6eaf0;
+  --muted:#7a8597; --accent:#ff5a1f; --accent-2:#29c7ff; --ok:#3cd382;
+  --warn:#ffb020; --bad:#ff4d4d; --line:#262d37;
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;background:var(--bg);color:var(--ink);
+  font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Inter,sans-serif;
+  -webkit-font-smoothing:antialiased; user-select:none;}
+button{font:inherit;color:inherit}
+input[type=range]{accent-color:var(--accent)}
+.topbar{display:flex;align-items:center;gap:16px;padding:14px 22px;
+  border-bottom:1px solid var(--line);background:linear-gradient(180deg,#10141a,#0b0d10)}
+.topbar h1{font-size:18px;margin:0;letter-spacing:.15em;text-transform:uppercase;color:#fff}
+.topbar .hint{color:var(--muted);font-size:12px;margin-left:auto}
+.modes{display:flex;gap:6px;padding:4px;background:#0c1016;border:1px solid var(--line);border-radius:10px}
+.mode-btn{padding:6px 12px;background:transparent;border:0;border-radius:7px;color:var(--muted);cursor:pointer;font-size:12px;letter-spacing:.08em;text-transform:uppercase}
+.mode-btn.active{background:var(--panel-2);color:#fff;box-shadow:inset 0 0 0 1px var(--line)}
+.helpbar{padding:10px 22px;border-top:1px solid var(--line);color:var(--muted);font-size:13px;background:#0a0c10}
+.helpbar ol{margin:8px 0 4px 18px;line-height:1.6}
+.helpbar b{color:var(--ink)}
+.console{display:grid;grid-template-columns:1fr 320px 1fr;gap:14px;padding:16px;min-height:calc(100vh - 120px)}
+@media (max-width:1000px){.console{grid-template-columns:1fr;grid-auto-rows:auto}}
+.deck,.mixer{background:var(--panel);border:1px solid var(--line);border-radius:14px;
+  padding:14px;display:flex;flex-direction:column;gap:12px;min-width:0}
+.deck{position:relative}
+.deck h2{margin:0;font-size:13px;letter-spacing:.18em;text-transform:uppercase;color:var(--muted)}
+.deck .label{font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:var(--muted)}
+.load-row{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.load-row input[type=file]{display:none}
+.btn{background:#1f2632;color:var(--ink);border:1px solid var(--line);border-radius:8px;
+  padding:7px 10px;font-size:12px;cursor:pointer;letter-spacing:.04em}
+.btn:hover{background:#262f3e}
+.btn.primary{background:var(--accent);border-color:#00000022;color:#fff}
+.btn.accent{background:var(--accent-2);color:#001018}
+.btn.ghost{background:transparent}
+.track-meta{font-size:12px;color:var(--muted);min-height:18px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.platter-wrap{display:grid;grid-template-columns:180px 1fr;gap:14px;align-items:center}
+.platter{position:relative;width:180px;height:180px;border-radius:50%;
+  background:radial-gradient(circle at 50% 50%,#222 0 30%,#111 31% 100%);
+  box-shadow:inset 0 0 0 1px #000, inset 0 0 30px #000a, 0 10px 22px #0008;
+  overflow:hidden}
+.platter::before{content:"";position:absolute;inset:8px;border-radius:50%;
+  background:repeating-conic-gradient(from 0deg,#0d0d0d 0 5deg,#1a1a1a 5deg 10deg)}
+.platter::after{content:"";position:absolute;inset:34%;border-radius:50%;
+  background:radial-gradient(#e53935,#7a1a17);box-shadow:0 0 0 4px #000}
+.platter .sticker{position:absolute;inset:34%;border-radius:50%;display:grid;place-items:center;color:#fff3;font-size:10px;letter-spacing:.2em}
+.platter-rot{position:absolute;inset:0;animation:spin 1.8s linear infinite;animation-play-state:paused}
+.platter-rot.on{animation-play-state:running}
+.platter-rot::before{content:"";position:absolute;left:50%;top:8px;width:2px;height:40%;background:#ffffff22;transform-origin:bottom;transform:translateX(-50%)}
+@keyframes spin{to{transform:rotate(360deg)}}
+.deck-side{display:flex;flex-direction:column;gap:8px;min-width:0}
+.bpm-box{display:flex;align-items:baseline;gap:8px;background:#0c1016;border:1px solid var(--line);border-radius:10px;padding:8px 10px}
+.bpm-box .big{font-variant-numeric:tabular-nums;font-size:28px;font-weight:700;letter-spacing:.02em}
+.bpm-box .unit{font-size:11px;color:var(--muted);letter-spacing:.2em}
+.bpm-box.hidden .big,.bpm-box.hidden .unit{visibility:hidden}
+.bpm-box.hidden::after{content:"EAR ONLY";font-size:11px;color:var(--muted);letter-spacing:.25em;margin-left:auto}
+.wave{height:60px;background:#0c1016;border:1px solid var(--line);border-radius:10px;position:relative;overflow:hidden}
+.wave canvas{width:100%;height:100%;display:block}
+.wave .needle{position:absolute;top:0;bottom:0;width:2px;background:var(--accent);left:0;pointer-events:none}
+.wave.hidden{visibility:hidden}
+.transport{display:flex;gap:6px;flex-wrap:wrap}
+.transport .btn{min-width:64px;text-align:center}
+.btn.play.on{background:var(--ok);color:#00130a}
+.btn.cue.on{background:var(--accent);color:#fff}
+.strip{display:grid;grid-template-columns:1fr 90px 1fr;gap:10px;align-items:stretch}
+.pitch{display:flex;flex-direction:column;align-items:center;gap:6px;background:#0c1016;border:1px solid var(--line);border-radius:10px;padding:10px}
+.pitch .val{font-variant-numeric:tabular-nums;font-size:12px;color:var(--muted)}
+.pitch input[type=range]{writing-mode:bt-lr;-webkit-appearance:slider-vertical;appearance:slider-vertical;width:28px;height:160px}
+.nudges{display:flex;flex-direction:column;gap:6px;justify-content:space-between}
+.nudges .btn{padding:10px 0;width:100%;font-weight:700}
+.eq{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;background:#0c1016;border:1px solid var(--line);border-radius:10px;padding:8px}
+.eq label{display:flex;flex-direction:column;align-items:center;gap:4px;font-size:10px;color:var(--muted);letter-spacing:.2em}
+.eq input[type=range]{writing-mode:bt-lr;-webkit-appearance:slider-vertical;appearance:slider-vertical;width:22px;height:90px}
+.volrow{display:grid;grid-template-columns:1fr 1fr;gap:8px;align-items:center}
+.volrow .fader{display:flex;flex-direction:column;gap:4px;background:#0c1016;border:1px solid var(--line);border-radius:10px;padding:8px 10px}
+.fader input[type=range]{width:100%}
+.mixer{align-items:stretch}
+.mixer h2{margin:0;text-align:center;font-size:13px;letter-spacing:.18em;text-transform:uppercase;color:var(--muted)}
+.diff{display:flex;flex-direction:column;align-items:center;gap:4px;background:#0c1016;border:1px solid var(--line);border-radius:10px;padding:10px}
+.diff .val{font-variant-numeric:tabular-nums;font-size:22px;font-weight:700}
+.diff.hidden .val{visibility:hidden}
+.diff.hidden::after{content:"hidden in vinyl mode";font-size:10px;color:var(--muted);letter-spacing:.1em}
+.phasebar{height:14px;background:#0c1016;border:1px solid var(--line);border-radius:7px;position:relative;overflow:hidden}
+.phasebar::before{content:"";position:absolute;top:0;bottom:0;left:50%;width:2px;background:#2a3340}
+.phasebar .dot{position:absolute;top:1px;bottom:1px;width:10px;border-radius:5px;background:var(--accent);left:calc(50% - 5px);transition:left .08s linear,background .2s}
+.phasebar.hidden .dot{visibility:hidden}
+.crossfader{background:#0c1016;border:1px solid var(--line);border-radius:10px;padding:10px}
+.crossfader input{width:100%}
+.knob-row{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.knob-row .fader{background:#0c1016;border:1px solid var(--line);border-radius:10px;padding:8px 10px}
+.toggle{display:flex;align-items:center;gap:8px;background:#0c1016;border:1px solid var(--line);border-radius:10px;padding:8px 10px;font-size:12px;color:var(--muted);cursor:pointer}
+.toggle input{accent-color:var(--accent)}
+.badge{font-size:10px;color:var(--muted);letter-spacing:.18em;text-transform:uppercase;margin-top:2px}
+.reveal{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.reveal .btn{flex:1}
+.kbdhint{font-size:11px;color:var(--muted)}
+.kbdhint kbd{background:#0c1016;border:1px solid var(--line);border-radius:4px;padding:1px 5px;font-size:10px;color:var(--ink)}
+</style>
+</head>
+<body>
+<header class="topbar">
+  <h1>Vinyl DJ Practice</h1>
+  <div class="modes" role="tablist" aria-label="Practice mode">
+    <button class="mode-btn" data-mode="easy">Easy</button>
+    <button class="mode-btn" data-mode="medium">Medium</button>
+    <button class="mode-btn active" data-mode="vinyl">Vinyl</button>
+  </div>
+  <div class="hint">Load a track or pick a built-in loop. Use pitch + nudge to beatmatch by ear.</div>
+</header>
+
+<main class="console" id="console">
+  <!-- DECK A -->
+  <section class="deck" data-deck="A" id="deckA">
+    <div class="load-row">
+      <h2>Deck A</h2>
+      <button class="btn" data-action="open-file">Load file</button>
+      <input type="file" accept="audio/*" data-file />
+      <button class="btn ghost" data-builtin="techno-128">Techno 128</button>
+      <button class="btn ghost" data-builtin="house-124">House 124</button>
+      <button class="btn ghost" data-builtin="tech-126">Tech 126.4</button>
+    </div>
+    <div class="track-meta" data-meta>No track loaded</div>
+    <div class="platter-wrap">
+      <div class="platter"><div class="platter-rot" data-platter></div><div class="sticker">45</div></div>
+      <div class="deck-side">
+        <div class="bpm-box" data-bpmbox><span class="big" data-bpm>---</span><span class="unit">BPM</span></div>
+        <div class="wave" data-wave><canvas></canvas><div class="needle" data-needle></div></div>
+        <div class="reveal">
+          <button class="btn ghost" data-action="reveal">Reveal BPM</button>
+          <button class="btn ghost" data-action="tap">Tap tempo</button>
+        </div>
+      </div>
+    </div>
+    <div class="transport">
+      <button class="btn play" data-action="play">Play</button>
+      <button class="btn cue" data-action="cue">CUE</button>
+      <button class="btn" data-action="set-cue">Set Cue</button>
+      <button class="btn ghost" data-action="restart">Restart</button>
+    </div>
+    <div class="strip">
+      <div class="eq">
+        <label>HIGH<input type="range" data-eq="high" min="-24" max="12" step="0.5" value="0"/></label>
+        <label>MID<input type="range" data-eq="mid"  min="-24" max="12" step="0.5" value="0"/></label>
+        <label>LOW<input type="range" data-eq="low"  min="-24" max="12" step="0.5" value="0"/></label>
+      </div>
+      <div class="pitch">
+        <div class="label">PITCH</div>
+        <input type="range" data-pitch min="-8" max="8" step="0.01" value="0"/>
+        <div class="val" data-pitchval>0.00%</div>
+        <select data-pitchrange class="btn" style="padding:4px 6px;font-size:11px">
+          <option value="8">±8%</option>
+          <option value="16">±16%</option>
+          <option value="50">±50%</option>
+        </select>
+      </div>
+      <div class="nudges">
+        <button class="btn" data-action="nudge-up">Nudge +</button>
+        <button class="btn" data-action="nudge-down">Nudge −</button>
+        <div class="kbdhint">Hold for temporary speed bump</div>
+      </div>
+    </div>
+    <div class="volrow">
+      <div class="fader"><span class="label">DECK VOLUME</span><input type="range" data-vol min="0" max="1" step="0.01" value="0.85"/></div>
+      <div class="fader"><span class="label">CUE SEND</span>
+        <label class="toggle" style="padding:4px 6px;border:0;background:transparent"><input type="checkbox" data-cuesend checked/> Route to headphones</label>
+      </div>
+    </div>
+  </section>
+
+  <!-- MIXER -->
+  <section class="mixer">
+    <h2>Mixer</h2>
+    <div class="diff" data-diff><span class="label">BPM Δ</span><span class="val" data-diffval>--</span></div>
+    <div class="phasebar" data-phasebar><div class="dot" data-phase></div></div>
+    <div class="badge" style="text-align:center">Phase meter (center = locked)</div>
+    <div class="crossfader">
+      <div class="label" style="display:flex;justify-content:space-between"><span>A</span><span>CROSSFADER</span><span>B</span></div>
+      <input type="range" data-crossfader min="-1" max="1" step="0.01" value="0"/>
+    </div>
+    <div class="knob-row">
+      <div class="fader"><span class="label">MASTER</span><input type="range" data-master min="0" max="1" step="0.01" value="0.85"/></div>
+      <div class="fader"><span class="label">HEADPHONES</span><input type="range" data-headvol min="0" max="1" step="0.01" value="0.9"/></div>
+    </div>
+    <div class="fader"><span class="label">CUE / MASTER MIX</span><input type="range" data-cuemix min="0" max="1" step="0.01" value="1"/>
+      <div class="badge">0 = hear master in phones · 1 = hear cue in phones</div>
+    </div>
+    <label class="toggle"><input type="checkbox" data-splitcue checked/> Split cue (L = cue, R = master)</label>
+    <label class="toggle"><input type="checkbox" data-showwave/> Show waveforms</label>
+    <label class="toggle"><input type="checkbox" data-showbpm/> Show BPM numbers</label>
+    <label class="toggle"><input type="checkbox" data-showphase checked/> Show phase meter</label>
+    <div class="kbdhint">Shortcuts: <kbd>Q</kbd>/<kbd>P</kbd> play A/B · <kbd>A</kbd>/<kbd>L</kbd> cue A/B · <kbd>Z</kbd>/<kbd>X</kbd> nudge A · <kbd>,</kbd>/<kbd>.</kbd> nudge B</div>
+  </section>
+
+  <!-- DECK B (cloned structure) -->
+  <section class="deck" data-deck="B" id="deckB">
+    <div class="load-row">
+      <h2>Deck B</h2>
+      <button class="btn" data-action="open-file">Load file</button>
+      <input type="file" accept="audio/*" data-file />
+      <button class="btn ghost" data-builtin="techno-128">Techno 128</button>
+      <button class="btn ghost" data-builtin="house-124">House 124</button>
+      <button class="btn ghost" data-builtin="tech-126">Tech 126.4</button>
+    </div>
+    <div class="track-meta" data-meta>No track loaded</div>
+    <div class="platter-wrap">
+      <div class="platter"><div class="platter-rot" data-platter></div><div class="sticker">45</div></div>
+      <div class="deck-side">
+        <div class="bpm-box" data-bpmbox><span class="big" data-bpm>---</span><span class="unit">BPM</span></div>
+        <div class="wave" data-wave><canvas></canvas><div class="needle" data-needle></div></div>
+        <div class="reveal">
+          <button class="btn ghost" data-action="reveal">Reveal BPM</button>
+          <button class="btn ghost" data-action="tap">Tap tempo</button>
+        </div>
+      </div>
+    </div>
+    <div class="transport">
+      <button class="btn play" data-action="play">Play</button>
+      <button class="btn cue" data-action="cue">CUE</button>
+      <button class="btn" data-action="set-cue">Set Cue</button>
+      <button class="btn ghost" data-action="restart">Restart</button>
+    </div>
+    <div class="strip">
+      <div class="eq">
+        <label>HIGH<input type="range" data-eq="high" min="-24" max="12" step="0.5" value="0"/></label>
+        <label>MID<input type="range" data-eq="mid"  min="-24" max="12" step="0.5" value="0"/></label>
+        <label>LOW<input type="range" data-eq="low"  min="-24" max="12" step="0.5" value="0"/></label>
+      </div>
+      <div class="pitch">
+        <div class="label">PITCH</div>
+        <input type="range" data-pitch min="-8" max="8" step="0.01" value="0"/>
+        <div class="val" data-pitchval>0.00%</div>
+        <select data-pitchrange class="btn" style="padding:4px 6px;font-size:11px">
+          <option value="8">±8%</option>
+          <option value="16">±16%</option>
+          <option value="50">±50%</option>
+        </select>
+      </div>
+      <div class="nudges">
+        <button class="btn" data-action="nudge-up">Nudge +</button>
+        <button class="btn" data-action="nudge-down">Nudge −</button>
+        <div class="kbdhint">Hold for temporary speed bump</div>
+      </div>
+    </div>
+    <div class="volrow">
+      <div class="fader"><span class="label">DECK VOLUME</span><input type="range" data-vol min="0" max="1" step="0.01" value="0.85"/></div>
+      <div class="fader"><span class="label">CUE SEND</span>
+        <label class="toggle" style="padding:4px 6px;border:0;background:transparent"><input type="checkbox" data-cuesend checked/> Route to headphones</label>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer class="helpbar">
+  <details>
+    <summary>How to practice</summary>
+    <ol>
+      <li>Load a track on Deck A, hit Play.</li>
+      <li>Load a second track on Deck B. Hold <b>CUE</b> to preview in your headphones (split-cue).</li>
+      <li>Drag the pitch fader on Deck B until the tempo sounds close.</li>
+      <li>Tap <b>Nudge +</b> / <b>Nudge −</b> to push the beat into phase.</li>
+      <li>Release CUE on a downbeat, slide the crossfader, and keep nudging to hold phase.</li>
+      <li>Switch to <b>Vinyl</b> mode to hide BPM numbers and mix purely by ear.</li>
+    </ol>
+  </details>
+</footer>
+
+<script id="app-script">
+"use strict";
+
+// ===== Audio Engine ==========================================================
+class AudioEngine {
+  constructor(){
+    this.ctx = null;
+    this.master = null;        // master -> destination
+    this.headphones = null;    // phones -> destination (via merger in split-cue)
+    this.splitCue = true;
+    this.decks = {};           // name -> Deck
+    this.merger = null;        // ChannelMerger for split-cue
+  }
+  ensure(){
+    if (this.ctx) return this.ctx;
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    this.ctx = ctx;
+    // master bus
+    this.masterGain = ctx.createGain();
+    this.masterGain.gain.value = 0.85;
+    // headphone bus
+    this.headphoneGain = ctx.createGain();
+    this.headphoneGain.gain.value = 0.9;
+
+    // Split-cue uses a ChannelMerger: master sums to mono on R, phones sum to mono on L.
+    this.masterToMono = ctx.createGain();
+    this.phonesToMono = ctx.createGain();
+    this.merger = ctx.createChannelMerger(2);
+    // Force downmix by routing stereo sources through ChannelSplitter + summing.
+    this._masterSplit = ctx.createChannelSplitter(2);
+    this._phonesSplit = ctx.createChannelSplitter(2);
+    this.masterGain.connect(this._masterSplit);
+    this.headphoneGain.connect(this._phonesSplit);
+    // Sum L+R to a single gain node for each bus
+    this._masterSplit.connect(this.masterToMono, 0);
+    this._masterSplit.connect(this.masterToMono, 1);
+    this._phonesSplit.connect(this.phonesToMono, 0);
+    this._phonesSplit.connect(this.phonesToMono, 1);
+
+    // Normal stereo master path
+    this.masterStereo = ctx.createGain();
+    this.masterGain.connect(this.masterStereo);
+
+    this.applyRouting();
+    return ctx;
+  }
+  applyRouting(){
+    const ctx = this.ctx;
+    // Disconnect final stage
+    try{ this.masterStereo.disconnect(); }catch(e){}
+    try{ this.merger.disconnect(); }catch(e){}
+    try{ this.masterToMono.disconnect(); }catch(e){}
+    try{ this.phonesToMono.disconnect(); }catch(e){}
+    try{ this.headphoneGain.disconnect(this.merger); }catch(e){}
+    if (this.splitCue){
+      // phones mono -> L (input 0), master mono -> R (input 1)
+      this.phonesToMono.connect(this.merger, 0, 0);
+      this.masterToMono.connect(this.merger, 0, 1);
+      this.merger.connect(ctx.destination);
+    } else {
+      this.masterStereo.connect(ctx.destination);
+      // headphones sum to destination too (so you still hear cue on both sides)
+      this.headphoneGain.connect(ctx.destination);
+    }
+  }
+  setSplitCue(v){ this.splitCue = !!v; if (this.ctx) this.applyRouting(); }
+  setMaster(v){ if (this.ctx) this.masterGain.gain.value = v; }
+  setHeadphone(v){ if (this.ctx) this.headphoneGain.gain.value = v; }
+}
+
+// ===== BPM detection (rough, offline) =======================================
+async function detectBpm(buffer){
+  // Downmix to mono and lowpass to focus on kick energy.
+  const sr = 11025;
+  const durLimit = Math.min(buffer.duration, 30);
+  const off = new OfflineAudioContext(1, Math.ceil(sr * durLimit), sr);
+  const src = off.createBufferSource();
+  src.buffer = buffer;
+  const lp = off.createBiquadFilter();
+  lp.type = "lowpass"; lp.frequency.value = 150; lp.Q.value = 1;
+  const hp = off.createBiquadFilter();
+  hp.type = "highpass"; hp.frequency.value = 40;
+  src.connect(hp).connect(lp).connect(off.destination);
+  src.start(0, 0, durLimit);
+  const rendered = await off.startRendering();
+  const data = rendered.getChannelData(0);
+  // Onset via moving-window energy threshold
+  const win = Math.floor(sr * 0.01); // 10ms
+  const energies = [];
+  for (let i=0;i<data.length;i+=win){
+    let e=0; const end=Math.min(i+win,data.length);
+    for (let j=i;j<end;j++) e += data[j]*data[j];
+    energies.push(e);
+  }
+  // Local maxima over 3-window neighborhood above dynamic threshold
+  const peaks = [];
+  const meanE = energies.reduce((a,b)=>a+b,0)/energies.length;
+  const thresh = meanE * 2.0;
+  for (let i=2;i<energies.length-2;i++){
+    const e=energies[i];
+    if (e>thresh && e>energies[i-1] && e>=energies[i+1] && e>energies[i-2] && e>energies[i+2]){
+      peaks.push(i*win/sr);
+    }
+  }
+  if (peaks.length < 4) return null;
+  // Histogram of inter-onset intervals in BPM space (60..200)
+  const bins = new Float64Array(200);
+  for (let i=1;i<peaks.length;i++){
+    for (let k=1;k<=4;k++){ // allow missed beats / subdivisions
+      const dt = (peaks[i]-peaks[i-1])*k;
+      if (dt<=0) continue;
+      const bpm = 60/dt;
+      if (bpm>=60 && bpm<=200) bins[Math.round(bpm)] += 1/k;
+    }
+  }
+  // Fold slow BPMs into dance range (doubling) and fast into halving
+  const folded = new Float64Array(200);
+  for (let b=60;b<200;b++){
+    let v = bins[b];
+    if (b<110) v += bins[b*2] || 0;
+    if (b>140) v += (bins[Math.floor(b/2)]||0)*0.6;
+    folded[b] = v;
+  }
+  let best=0, bestB=0;
+  for (let b=110;b<=140;b++){ if (folded[b]>best){best=folded[b];bestB=b;} }
+  if (bestB===0){ for (let b=60;b<200;b++) if (folded[b]>best){best=folded[b];bestB=b;} }
+  // Refine to 0.1 by looking at neighbourhood of raw bins
+  let num=0, den=0;
+  for (let b=bestB-2;b<=bestB+2;b++){ num += b*(bins[b]||0); den += (bins[b]||0); }
+  const refined = den>0 ? num/den : bestB;
+  return Math.round(refined*10)/10;
+}
+
+// ===== Built-in loop synth ===================================================
+async function buildLoop(kind){
+  const presets = {
+    "techno-128": { bpm:128, bars:4, style:"techno" },
+    "house-124":  { bpm:124, bars:4, style:"house" },
+    "tech-126":   { bpm:126.4, bars:4, style:"techhouse" },
+  };
+  const p = presets[kind]; if (!p) return null;
+  const sr = 44100;
+  const secPerBeat = 60/p.bpm;
+  const totalBeats = p.bars*4;
+  const dur = totalBeats*secPerBeat;
+  const off = new OfflineAudioContext(2, Math.ceil(sr*dur), sr);
+  const master = off.createGain(); master.gain.value = 0.9;
+  master.connect(off.destination);
+  const addKick = (t) => {
+    const o = off.createOscillator(); o.type="sine";
+    const g = off.createGain();
+    o.frequency.setValueAtTime(120, t);
+    o.frequency.exponentialRampToValueAtTime(40, t+0.14);
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(1.0, t+0.004);
+    g.gain.exponentialRampToValueAtTime(0.0001, t+0.35);
+    o.connect(g).connect(master);
+    o.start(t); o.stop(t+0.4);
+  };
+  const addHat = (t, open=false) => {
+    const bufferSize = Math.floor(sr*0.12);
+    const noise = off.createBuffer(1, bufferSize, sr);
+    const nd = noise.getChannelData(0);
+    for (let i=0;i<bufferSize;i++) nd[i] = Math.random()*2-1;
+    const src = off.createBufferSource(); src.buffer = noise;
+    const hp = off.createBiquadFilter(); hp.type="highpass"; hp.frequency.value=6000;
+    const g = off.createGain();
+    const dec = open ? 0.18 : 0.05;
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(0.4, t+0.002);
+    g.gain.exponentialRampToValueAtTime(0.0001, t+dec);
+    src.connect(hp).connect(g).connect(master);
+    src.start(t); src.stop(t+dec+0.01);
+  };
+  const addClap = (t) => {
+    const bufferSize = Math.floor(sr*0.2);
+    const noise = off.createBuffer(1, bufferSize, sr);
+    const nd = noise.getChannelData(0);
+    for (let i=0;i<bufferSize;i++) nd[i] = Math.random()*2-1;
+    const src = off.createBufferSource(); src.buffer = noise;
+    const bp = off.createBiquadFilter(); bp.type="bandpass"; bp.frequency.value=1500; bp.Q.value=0.8;
+    const g = off.createGain();
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(0.5, t+0.003);
+    g.gain.exponentialRampToValueAtTime(0.0001, t+0.18);
+    src.connect(bp).connect(g).connect(master);
+    src.start(t); src.stop(t+0.2);
+  };
+  const addBass = (t, len, freq) => {
+    const o = off.createOscillator(); o.type="sawtooth";
+    o.frequency.value = freq;
+    const lp = off.createBiquadFilter(); lp.type="lowpass"; lp.frequency.value=500; lp.Q.value=3;
+    const g = off.createGain();
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(0.35, t+0.01);
+    g.gain.exponentialRampToValueAtTime(0.0001, t+len);
+    o.connect(lp).connect(g).connect(master);
+    o.start(t); o.stop(t+len+0.02);
+  };
+  // Pattern generation
+  for (let beat=0; beat<totalBeats; beat++){
+    const t = beat*secPerBeat;
+    // 4-on-the-floor kick
+    addKick(t);
+    // closed hat on 8ths
+    addHat(t + secPerBeat/2);
+    if (p.style!=="techno") addHat(t, false);
+    // clap on 2 and 4
+    if (beat%2===1) addClap(t);
+    // bass on offbeat eighths
+    const notes = [55, 55, 62, 58];
+    const note = notes[Math.floor(beat/4)%notes.length];
+    addBass(t + secPerBeat/2, secPerBeat*0.45, note);
+    // occasional open hat for house
+    if (p.style==="house" && beat%4===2) addHat(t+secPerBeat/2, true);
+  }
+  const rendered = await off.startRendering();
+  return { buffer: rendered, meta: { name: kind, bpm: p.bpm } };
+}
+
+// ===== Deck ==================================================================
+class Deck {
+  constructor(engine, name){
+    this.engine = engine;
+    this.name = name;
+    this.buffer = null;
+    this.source = null;
+    this.playing = false;
+    this.startedAt = 0;       // ctx.currentTime when last started
+    this.offset = 0;          // position within buffer when started
+    this.cuePoint = 0;
+    this.pitch = 0;           // percent
+    this.pitchRange = 8;      // percent
+    this.nudge = 0;           // percent temporary
+    this.volume = 0.85;
+    this.crossGain = 1;       // from crossfader
+    this.cueSend = true;
+    // detected BPM of track
+    this.bpm = null;
+    // nodes
+    this.nodes = null;
+  }
+  _buildNodes(){
+    const ctx = this.engine.ctx;
+    const n = {};
+    n.gain = ctx.createGain();
+    n.gain.gain.value = this.volume;
+    // 3-band EQ
+    n.low  = ctx.createBiquadFilter(); n.low.type="lowshelf";   n.low.frequency.value=120;  n.low.gain.value=0;
+    n.mid  = ctx.createBiquadFilter(); n.mid.type="peaking";    n.mid.frequency.value=900;  n.mid.Q.value=0.9; n.mid.gain.value=0;
+    n.high = ctx.createBiquadFilter(); n.high.type="highshelf"; n.high.frequency.value=3500;n.high.gain.value=0;
+    // crossfader gain (master send)
+    n.xfade = ctx.createGain();
+    n.xfade.gain.value = this.crossGain;
+    // cue send gain
+    n.cue = ctx.createGain();
+    n.cue.gain.value = this.cueSend ? 1 : 0;
+    // wiring: source -> low -> mid -> high -> gain -> [ xfade -> master, cue -> phones ]
+    n.low.connect(n.mid).connect(n.high).connect(n.gain);
+    n.gain.connect(n.xfade).connect(this.engine.masterGain);
+    n.gain.connect(n.cue).connect(this.engine.headphoneGain);
+    this.nodes = n;
+  }
+  setBuffer(buf, meta){
+    this.buffer = buf;
+    this.meta = meta || {};
+    this.cuePoint = 0;
+    this.offset = 0;
+    this.stop(true);
+  }
+  _startSource(offset){
+    const ctx = this.engine.ctx;
+    if (!this.nodes) this._buildNodes();
+    this.source = ctx.createBufferSource();
+    this.source.buffer = this.buffer;
+    this.source.connect(this.nodes.low);
+    this._applyRate();
+    try { this.source.start(0, offset); } catch(e){}
+    this.startedAt = ctx.currentTime;
+    this.offset = offset;
+  }
+  _applyRate(){
+    if (!this.source) return;
+    const rate = 1 + (this.pitch + this.nudge)/100;
+    this.source.playbackRate.setTargetAtTime(rate, this.engine.ctx.currentTime, 0.02);
+  }
+  currentPos(){
+    if (!this.buffer) return 0;
+    if (!this.playing) return this.offset;
+    const rate = 1 + (this.pitch + this.nudge)/100;
+    const pos = this.offset + (this.engine.ctx.currentTime - this.startedAt)*rate;
+    return pos % this.buffer.duration;
+  }
+  play(){
+    if (!this.buffer) return;
+    this.engine.ensure();
+    if (this.engine.ctx.state === "suspended") this.engine.ctx.resume();
+    if (this.playing) return;
+    this._startSource(this.offset || this.cuePoint);
+    this.playing = true;
+  }
+  stop(atCue){
+    if (this.source){ try{ this.source.stop(); }catch(e){} this.source.disconnect(); this.source = null; }
+    if (this.playing){
+      this.offset = atCue ? this.cuePoint : this.currentPos();
+    }
+    this.playing = false;
+  }
+  pauseToggle(){ this.playing ? this.stop(false) : this.play(); }
+  cueDown(){ // jump to cue + play while held
+    if (!this.buffer) return;
+    this.engine.ensure();
+    if (this.engine.ctx.state === "suspended") this.engine.ctx.resume();
+    if (this.playing) this.stop(false);
+    this.offset = this.cuePoint;
+    this._startSource(this.cuePoint);
+    this.playing = true;
+    this._cuedByButton = true;
+  }
+  cueUp(){
+    if (this._cuedByButton){
+      this.stop(true);
+      this._cuedByButton = false;
+    }
+  }
+  setCueHere(){ this.cuePoint = this.currentPos(); }
+  restart(){ this.stop(true); }
+  setPitch(p){ this.pitch = p; this._applyRate(); }
+  setNudge(n){ this.nudge = n; this._applyRate(); }
+  setVolume(v){ this.volume = v; if (this.nodes) this.nodes.gain.gain.value = v; }
+  setCrossGain(g){ this.crossGain = g; if (this.nodes) this.nodes.xfade.gain.value = g; }
+  setCueSend(on){ this.cueSend = on; if (this.nodes) this.nodes.cue.gain.value = on ? 1 : 0; }
+  setEQ(band, db){ if (this.nodes) this.nodes[band].gain.value = db; }
+  // effective current BPM considering pitch/nudge
+  currentBpm(){
+    if (!this.bpm) return null;
+    return this.bpm * (1 + (this.pitch + this.nudge)/100);
+  }
+}
+
+// ===== Waveform helper ======================================================
+function drawWaveform(canvas, buffer){
+  if (!canvas || !buffer) return;
+  const ctx = canvas.getContext("2d");
+  const W = canvas.width = canvas.clientWidth * devicePixelRatio;
+  const H = canvas.height = canvas.clientHeight * devicePixelRatio;
+  ctx.clearRect(0,0,W,H);
+  const data = buffer.getChannelData(0);
+  const step = Math.max(1, Math.floor(data.length / W));
+  ctx.fillStyle = "#29c7ff44";
+  ctx.strokeStyle = "#29c7ff";
+  ctx.lineWidth = 1;
+  for (let x=0;x<W;x++){
+    let min=1, max=-1;
+    const s = x*step, e = Math.min(s+step, data.length);
+    for (let i=s;i<e;i++){ const v=data[i]; if (v<min)min=v; if (v>max)max=v; }
+    const y1 = (1-(max*0.9+0.5))*H/2 + H/4;
+    const y2 = (1-(min*0.9+0.5))*H/2 + H/4;
+    ctx.fillRect(x, y1, 1, Math.max(1, y2-y1));
+  }
+}
+
+// ===== App ==================================================================
+const engine = new AudioEngine();
+const decks = { A: new Deck(engine, "A"), B: new Deck(engine, "B") };
+const state = {
+  mode: "vinyl",              // easy | medium | vinyl
+  showBpm: false, showWave: false, showPhase: true,
+  crossfader: 0,
+  phaseOffset: 0,             // running phase diff estimate (in beats)
+  lastPhaseTs: 0,
+};
+
+function setMode(m){
+  state.mode = m;
+  document.querySelectorAll(".mode-btn").forEach(b=>b.classList.toggle("active", b.dataset.mode===m));
+  if (m==="easy"){ state.showBpm=true; state.showWave=true; state.showPhase=true; }
+  else if (m==="medium"){ state.showBpm=false; state.showWave=false; state.showPhase=true; }
+  else { state.showBpm=false; state.showWave=false; state.showPhase=false; }
+  document.querySelector("[data-showbpm]").checked = state.showBpm;
+  document.querySelector("[data-showwave]").checked = state.showWave;
+  document.querySelector("[data-showphase]").checked = state.showPhase;
+  applyVisibility();
+}
+
+function applyVisibility(){
+  document.querySelectorAll("[data-bpmbox]").forEach(el=>el.classList.toggle("hidden", !state.showBpm));
+  document.querySelectorAll("[data-wave]").forEach(el=>el.classList.toggle("hidden", !state.showWave));
+  document.querySelector("[data-phasebar]").classList.toggle("hidden", !state.showPhase);
+  document.querySelector("[data-diff]").classList.toggle("hidden", !state.showBpm);
+}
+
+function updateCrossfader(v){
+  state.crossfader = v;
+  // Equal-power curve
+  const a = Math.cos((v+1)*Math.PI/4);
+  const b = Math.cos((1-v)*Math.PI/4);
+  decks.A.setCrossGain(a);
+  decks.B.setCrossGain(b);
+}
+
+function updatePitchLabel(deckEl, p){
+  const val = deckEl.querySelector("[data-pitchval]");
+  if (val) val.textContent = (p>=0?"+":"") + p.toFixed(2) + "%";
+}
+
+async function loadArrayBufferToDeck(name, arrayBuffer, meta){
+  engine.ensure();
+  const buf = await engine.ctx.decodeAudioData(arrayBuffer);
+  attachBufferToDeck(name, buf, meta);
+}
+
+async function attachBufferToDeck(name, buffer, meta){
+  const d = decks[name];
+  d.setBuffer(buffer, meta);
+  const deckEl = document.getElementById("deck"+name);
+  deckEl.querySelector("[data-meta]").textContent = (meta && meta.name) ? meta.name : "Loaded";
+  const canvas = deckEl.querySelector("[data-wave] canvas");
+  drawWaveform(canvas, buffer);
+  // If the loop is already a known-BPM synth loop, trust the preset BPM.
+  if (meta && meta.bpm){
+    d.bpm = meta.bpm;
+  } else {
+    deckEl.querySelector("[data-bpm]").textContent = "...";
+    try { d.bpm = await detectBpm(buffer); } catch(e){ d.bpm = null; }
+  }
+  renderBpm(name);
+}
+
+function renderBpm(name){
+  const d = decks[name];
+  const el = document.querySelector("#deck"+name+" [data-bpm]");
+  if (!el) return;
+  el.textContent = d.bpm ? d.bpm.toFixed(1) : "---";
+}
+
+// ===== Event wiring =========================================================
+function wireDeck(name){
+  const deckEl = document.getElementById("deck"+name);
+  const d = decks[name];
+  const btn = (act) => deckEl.querySelector(`[data-action="${act}"]`);
+  btn("open-file").addEventListener("click", ()=> deckEl.querySelector("[data-file]").click());
+  deckEl.querySelector("[data-file]").addEventListener("change", async (e)=>{
+    const f = e.target.files[0]; if (!f) return;
+    const ab = await f.arrayBuffer();
+    deckEl.querySelector("[data-meta]").textContent = "Decoding " + f.name + "...";
+    await loadArrayBufferToDeck(name, ab, { name: f.name });
+  });
+  deckEl.querySelectorAll("[data-builtin]").forEach(b=>{
+    b.addEventListener("click", async ()=>{
+      deckEl.querySelector("[data-meta]").textContent = "Synthesizing "+b.dataset.builtin+"...";
+      engine.ensure();
+      const res = await buildLoop(b.dataset.builtin);
+      await attachBufferToDeck(name, res.buffer, res.meta);
+    });
+  });
+  btn("play").addEventListener("click", ()=>{
+    d.pauseToggle();
+    btn("play").classList.toggle("on", d.playing);
+    btn("play").textContent = d.playing ? "Pause" : "Play";
+    deckEl.querySelector("[data-platter]").classList.toggle("on", d.playing);
+  });
+  const cueBtn = btn("cue");
+  const cueDown = ()=>{ d.cueDown(); cueBtn.classList.add("on"); deckEl.querySelector("[data-platter]").classList.add("on"); };
+  const cueUp = ()=>{ d.cueUp(); cueBtn.classList.remove("on"); deckEl.querySelector("[data-platter]").classList.toggle("on", d.playing); };
+  cueBtn.addEventListener("mousedown", cueDown); cueBtn.addEventListener("mouseup", cueUp); cueBtn.addEventListener("mouseleave", cueUp);
+  cueBtn.addEventListener("touchstart", (e)=>{e.preventDefault();cueDown();}); cueBtn.addEventListener("touchend", cueUp);
+  btn("set-cue").addEventListener("click", ()=>{ d.setCueHere(); });
+  btn("restart").addEventListener("click", ()=>{ d.restart(); btn("play").classList.remove("on"); btn("play").textContent="Play"; deckEl.querySelector("[data-platter]").classList.remove("on"); });
+  btn("reveal").addEventListener("click", ()=>{
+    // Temporary reveal of BPM even in vinyl mode
+    const box = deckEl.querySelector("[data-bpmbox]");
+    const prevHidden = box.classList.contains("hidden");
+    box.classList.remove("hidden");
+    setTimeout(()=>{ if (!state.showBpm) box.classList.toggle("hidden", prevHidden); }, 2500);
+  });
+  // Tap tempo
+  let taps = [];
+  btn("tap").addEventListener("click", ()=>{
+    const t = performance.now()/1000;
+    taps = taps.filter(x=>t-x<3); taps.push(t);
+    if (taps.length>=4){
+      let sum=0; for (let i=1;i<taps.length;i++) sum += (taps[i]-taps[i-1]);
+      const avg = sum/(taps.length-1);
+      d.bpm = Math.round((60/avg)*10)/10;
+      renderBpm(name);
+    }
+  });
+  // Pitch
+  const pitch = deckEl.querySelector("[data-pitch]");
+  const pitchRange = deckEl.querySelector("[data-pitchrange]");
+  const applyPitch = ()=>{
+    const r = Number(pitchRange.value);
+    pitch.min = -r; pitch.max = r;
+    const p = Number(pitch.value);
+    d.setPitch(p);
+    updatePitchLabel(deckEl, p);
+  };
+  pitch.addEventListener("input", applyPitch);
+  pitchRange.addEventListener("change", applyPitch);
+  applyPitch();
+  // Nudge (hold-to-apply)
+  const bindNudge = (selector, amount)=>{
+    const b = deckEl.querySelector(`[data-action="${selector}"]`);
+    const down = (e)=>{ e.preventDefault(); d.setNudge(amount); b.style.background="var(--accent)"; };
+    const up = ()=>{ d.setNudge(0); b.style.background=""; };
+    b.addEventListener("mousedown", down); b.addEventListener("mouseup", up); b.addEventListener("mouseleave", up);
+    b.addEventListener("touchstart", down, {passive:false}); b.addEventListener("touchend", up);
+  };
+  bindNudge("nudge-up", 3.5);
+  bindNudge("nudge-down", -3.5);
+  // Volume + EQ + cue send
+  deckEl.querySelector("[data-vol]").addEventListener("input", e=> d.setVolume(Number(e.target.value)));
+  deckEl.querySelectorAll("[data-eq]").forEach(inp=>{
+    inp.addEventListener("input", e=> d.setEQ(inp.dataset.eq, Number(e.target.value)));
+  });
+  deckEl.querySelector("[data-cuesend]").addEventListener("change", e=> d.setCueSend(e.target.checked));
+}
+
+function wireMixer(){
+  document.querySelector("[data-crossfader]").addEventListener("input", e=> updateCrossfader(Number(e.target.value)));
+  document.querySelector("[data-master]").addEventListener("input", e=> engine.setMaster(Number(e.target.value)));
+  document.querySelector("[data-headvol]").addEventListener("input", e=> engine.setHeadphone(Number(e.target.value)));
+  document.querySelector("[data-cuemix]").addEventListener("input", e=>{
+    // cue/master mix: 0 => route master to phones too, 1 => only cue to phones
+    const v = Number(e.target.value);
+    // scale deck cue sends and master->phones
+    // Simplified: cue send gain lives on decks; we tweak a virtual via headphone gain is not ideal.
+    // Instead, store mix and apply to cue gains dynamically.
+    state.cueMix = v;
+    decks.A.setCueSend(decks.A.cueSend ? v : 0);
+    decks.B.setCueSend(decks.B.cueSend ? v : 0);
+    // We don't route master into phones separately here; split-cue keeps master on R channel.
+  });
+  document.querySelector("[data-splitcue]").addEventListener("change", e=> engine.setSplitCue(e.target.checked));
+  document.querySelector("[data-showwave]").addEventListener("change", e=>{ state.showWave=e.target.checked; applyVisibility(); });
+  document.querySelector("[data-showbpm]").addEventListener("change", e=>{ state.showBpm=e.target.checked; applyVisibility(); });
+  document.querySelector("[data-showphase]").addEventListener("change", e=>{ state.showPhase=e.target.checked; applyVisibility(); });
+  document.querySelectorAll(".mode-btn").forEach(b=> b.addEventListener("click", ()=> setMode(b.dataset.mode)));
+}
+
+// Keyboard shortcuts
+function wireKeys(){
+  const map = {
+    "q": ()=> triggerPlay("A"),
+    "p": ()=> triggerPlay("B"),
+    "a": ()=> triggerCue("A", true),
+    "l": ()=> triggerCue("B", true),
+    "z": ()=> decks.A.setNudge(-3.5),
+    "x": ()=> decks.A.setNudge(3.5),
+    ",": ()=> decks.B.setNudge(-3.5),
+    ".": ()=> decks.B.setNudge(3.5),
+  };
+  const releaseMap = {
+    "a": ()=> triggerCue("A", false),
+    "l": ()=> triggerCue("B", false),
+    "z": ()=> decks.A.setNudge(0),
+    "x": ()=> decks.A.setNudge(0),
+    ",": ()=> decks.B.setNudge(0),
+    ".": ()=> decks.B.setNudge(0),
+  };
+  window.addEventListener("keydown", (e)=>{
+    if (e.repeat) return;
+    const k = e.key.toLowerCase();
+    if (map[k]){ map[k](); e.preventDefault(); }
+  });
+  window.addEventListener("keyup", (e)=>{
+    const k = e.key.toLowerCase();
+    if (releaseMap[k]){ releaseMap[k](); }
+  });
+}
+function triggerPlay(name){
+  const deckEl = document.getElementById("deck"+name);
+  deckEl.querySelector('[data-action="play"]').click();
+}
+function triggerCue(name, down){
+  const deckEl = document.getElementById("deck"+name);
+  const b = deckEl.querySelector('[data-action="cue"]');
+  const ev = new MouseEvent(down?"mousedown":"mouseup", {bubbles:true});
+  b.dispatchEvent(ev);
+}
+
+// Phase & diff meter (runs ~30fps)
+function loop(){
+  const a = decks.A.currentBpm();
+  const b = decks.B.currentBpm();
+  const diffEl = document.querySelector("[data-diffval]");
+  if (a && b){
+    const diff = b - a;
+    diffEl.textContent = (diff>=0?"+":"") + diff.toFixed(2);
+    // Update drift phase: integrate beat drift per frame
+    const dt = 1/30;
+    const beatsDriftPerSec = diff/60;
+    state.phaseOffset += beatsDriftPerSec * dt;
+    // Wrap into [-0.5, 0.5] beats for display
+    let p = state.phaseOffset - Math.round(state.phaseOffset);
+    const dot = document.querySelector("[data-phase]");
+    const pct = 50 + p*100; // -0.5..0.5 -> 0..100
+    dot.style.left = `calc(${pct}% - 5px)`;
+    dot.style.background = Math.abs(p)<0.03 ? "var(--ok)" : (Math.abs(p)<0.1 ? "var(--warn)" : "var(--accent)");
+  } else {
+    diffEl.textContent = "--";
+  }
+  // Waveform needle
+  ["A","B"].forEach(name=>{
+    const d = decks[name];
+    const deckEl = document.getElementById("deck"+name);
+    const needle = deckEl.querySelector("[data-needle]");
+    if (d.buffer && needle){
+      const w = deckEl.querySelector("[data-wave]").clientWidth;
+      needle.style.left = Math.floor((d.currentPos()/d.buffer.duration)*w) + "px";
+    }
+    // Update live BPM display if shown
+    if (state.showBpm){
+      const el = deckEl.querySelector("[data-bpm]");
+      const bpm = d.currentBpm();
+      if (bpm) el.textContent = bpm.toFixed(1);
+    }
+  });
+  requestAnimationFrame(loop);
+}
+
+// Boot
+wireDeck("A"); wireDeck("B"); wireMixer(); wireKeys();
+setMode("vinyl");
+requestAnimationFrame(loop);
+
+// Gesture unlock for audio context
+document.body.addEventListener("click", ()=>{ engine.ensure(); if (engine.ctx.state==="suspended") engine.ctx.resume(); }, { once:true });
+</script>
+</body>
+</html>
