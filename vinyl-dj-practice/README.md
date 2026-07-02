@@ -16,7 +16,14 @@ Built for techno/house bedroom practice. Just open `index.html` in any modern br
   - **Easy** — BPM, waveforms, and a phase meter visible. Good for getting started.
   - **Medium** — BPM hidden, waveforms hidden, phase meter visible.
   - **Vinyl** — all visuals off. You use your ears. There is a `Reveal BPM` button if you want to confirm after attempting.
-- **Built-in synthesized loops**: techno @ 128, house @ 124, tech-house @ 126.4 — for instant practice without uploading anything. Mix them against each other or against your own files.
+- **Built-in synthesized "records"** in the spirit of eclectic Dekmantel-style selecting: Boogie 12" (113.6), Afro LP (117.8), Deep House 12" (121.3), House 12" (124.0), Techno 12" (128.0). Non-round BPMs on purpose — real records rarely sit on integers. Mix them against each other or against your own files.
+- **Worn record mode** (per deck): the tempo slowly drifts like an old pressing or a live drummer, so you have to keep riding the pitch instead of set-and-forget.
+- **Draggable platters**: spin the platter with mouse or finger to nudge, like touching the record. Works on phones — practice on the go.
+- **Beatmatch Trainer with grading**: it secretly renders Deck B at a nearby tempo, you match by ear, then "Grade me" scores your tempo (70 pts) and phase (30 pts) with concrete feedback. Streak/best/attempts persist in your browser. Three difficulties:
+  - **Warm-up** — same genre, ±2% offset, phase meter on
+  - **Club** — any genre, ±4%, ears only
+  - **Dekmantel** — ±6%, worn records that drift while you match
+- **Built-in lessons**: five collapsible lessons at the bottom (hearing which record is faster, riding the pitch, vinyl-style cueing, the long blend) plus a practice ladder from beginner to confident.
 - **File upload**: drop in any audio your browser can decode (MP3 / WAV / FLAC / M4A on most browsers). BPM is auto-detected.
 - **Tap tempo** if auto-detect is off.
 
@@ -39,8 +46,14 @@ Built for techno/house bedroom practice. Just open `index.html` in any modern br
 - `Z` / `X` — Nudge Deck A down / up (hold)
 - `,` / `.` — Nudge Deck B down / up (hold)
 
+## Suggested routine (15 min/day)
+
+1. 2 min — faster/slower drill: play both decks, guess which is ahead, reveal to check.
+2. 8 min — trainer rounds at your current level. Move up after three 80+ scores in a row.
+3. 5 min — one long blend in Vinyl mode: hold it two minutes, swap the bass with EQ, land it.
+
 ## Notes / caveats
 
 - BPM detection is rough — it works best on 4-on-the-floor music with a clear kick. If it's wrong, hit **Tap tempo** four times.
-- The platter graphic is purely visual; you can't drag it like a jog wheel. Nudge buttons replace that.
+- The trainer uses synthesized loops so it knows the exact beat grid for honest grading; uploaded files grade less precisely.
 - This is a single static HTML file. Open it directly (`file://`) or serve it with `python3 -m http.server`.

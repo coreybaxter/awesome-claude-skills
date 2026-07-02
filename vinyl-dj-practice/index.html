@@ -103,6 +103,33 @@ input[type=range]{accent-color:var(--accent)}
 .reveal .btn{flex:1}
 .kbdhint{font-size:11px;color:var(--muted)}
 .kbdhint kbd{background:#0c1016;border:1px solid var(--line);border-radius:4px;padding:1px 5px;font-size:10px;color:var(--ink)}
+/* Trainer */
+.trainer{background:#0c1016;border:1px solid var(--line);border-radius:10px;padding:10px;display:flex;flex-direction:column;gap:8px}
+.trainer h3{margin:0;font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:var(--accent-2)}
+.trainer .row{display:flex;gap:6px;flex-wrap:wrap}
+.trainer .btn{flex:1;min-width:0}
+.trainer .result{font-size:12px;line-height:1.5;color:var(--muted);min-height:34px}
+.trainer .result b{color:var(--ink)}
+.trainer .score{font-size:26px;font-weight:800;text-align:center;font-variant-numeric:tabular-nums}
+.trainer .score.good{color:var(--ok)} .trainer .score.mid{color:var(--warn)} .trainer .score.bad{color:var(--bad)}
+.trainer .stats{display:flex;justify-content:space-between;font-size:11px;color:var(--muted)}
+.trainer select{background:#1f2632;border:1px solid var(--line);border-radius:8px;color:var(--ink);padding:5px 6px;font-size:12px}
+.platter{cursor:grab;touch-action:none}
+.platter:active{cursor:grabbing}
+/* Learn drawer */
+.learn{margin-top:8px}
+.learn details{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:8px 12px;margin-bottom:6px}
+.learn summary{cursor:pointer;font-size:13px;color:var(--ink)}
+.learn .body{color:var(--muted);font-size:13px;line-height:1.65;padding:6px 0 2px}
+.learn .body b{color:var(--ink)}
+.learn .body ul,.learn .body ol{margin:6px 0 6px 18px}
+@media (max-width:1000px){
+  .platter-wrap{grid-template-columns:140px 1fr}
+  .platter{width:140px;height:140px}
+  .pitch input[type=range]{height:120px}
+  .topbar{flex-wrap:wrap}
+  .topbar .hint{display:none}
+}
 </style>
 </head>
 <body>
@@ -123,9 +150,11 @@ input[type=range]{accent-color:var(--accent)}
       <h2>Deck A</h2>
       <button class="btn" data-action="open-file">Load file</button>
       <input type="file" accept="audio/*" data-file />
-      <button class="btn ghost" data-builtin="techno-128">Techno 128</button>
-      <button class="btn ghost" data-builtin="house-124">House 124</button>
-      <button class="btn ghost" data-builtin="tech-126">Tech 126.4</button>
+      <button class="btn ghost" data-builtin="house-124">House</button>
+      <button class="btn ghost" data-builtin="disco-114">Disco</button>
+      <button class="btn ghost" data-builtin="afro-118">Afro</button>
+      <button class="btn ghost" data-builtin="deep-121">Deep</button>
+      <button class="btn ghost" data-builtin="techno-128">Techno</button>
     </div>
     <div class="track-meta" data-meta>No track loaded</div>
     <div class="platter-wrap">
@@ -171,6 +200,7 @@ input[type=range]{accent-color:var(--accent)}
       <div class="fader"><span class="label">DECK VOLUME</span><input type="range" data-vol min="0" max="1" step="0.01" value="0.85"/></div>
       <div class="fader"><span class="label">CUE SEND</span>
         <label class="toggle" style="padding:4px 6px;border:0;background:transparent"><input type="checkbox" data-cuesend checked/> Route to headphones</label>
+        <label class="toggle" style="padding:4px 6px;border:0;background:transparent"><input type="checkbox" data-drift/> Worn record (tempo drifts)</label>
       </div>
     </div>
   </section>
@@ -196,7 +226,24 @@ input[type=range]{accent-color:var(--accent)}
     <label class="toggle"><input type="checkbox" data-showwave/> Show waveforms</label>
     <label class="toggle"><input type="checkbox" data-showbpm/> Show BPM numbers</label>
     <label class="toggle"><input type="checkbox" data-showphase checked/> Show phase meter</label>
-    <div class="kbdhint">Shortcuts: <kbd>Q</kbd>/<kbd>P</kbd> play A/B · <kbd>A</kbd>/<kbd>L</kbd> cue A/B · <kbd>Z</kbd>/<kbd>X</kbd> nudge A · <kbd>,</kbd>/<kbd>.</kbd> nudge B</div>
+    <div class="trainer" id="trainer">
+      <h3>Beatmatch Trainer</h3>
+      <div class="row">
+        <select data-tr-difficulty>
+          <option value="easy">Warm-up (±2%, meter on)</option>
+          <option value="normal" selected>Club (±4%, ears only)</option>
+          <option value="hard">Dekmantel (±6%, worn records)</option>
+        </select>
+      </div>
+      <div class="row">
+        <button class="btn primary" data-tr-start>New challenge</button>
+        <button class="btn accent" data-tr-grade disabled>Grade me</button>
+      </div>
+      <div class="score" data-tr-score></div>
+      <div class="result" data-tr-result>Deck A plays a record. Deck B gets a secret nearby tempo — match it by ear, then get graded.</div>
+      <div class="stats"><span data-tr-streak>Streak: 0</span><span data-tr-best>Best: —</span><span data-tr-attempts>Attempts: 0</span></div>
+    </div>
+    <div class="kbdhint">Shortcuts: <kbd>Q</kbd>/<kbd>P</kbd> play A/B · <kbd>A</kbd>/<kbd>L</kbd> cue A/B · <kbd>Z</kbd>/<kbd>X</kbd> nudge A · <kbd>,</kbd>/<kbd>.</kbd> nudge B · drag the platter to nudge like a record</div>
   </section>
 
   <!-- DECK B (cloned structure) -->
@@ -205,9 +252,11 @@ input[type=range]{accent-color:var(--accent)}
       <h2>Deck B</h2>
       <button class="btn" data-action="open-file">Load file</button>
       <input type="file" accept="audio/*" data-file />
-      <button class="btn ghost" data-builtin="techno-128">Techno 128</button>
-      <button class="btn ghost" data-builtin="house-124">House 124</button>
-      <button class="btn ghost" data-builtin="tech-126">Tech 126.4</button>
+      <button class="btn ghost" data-builtin="house-124">House</button>
+      <button class="btn ghost" data-builtin="disco-114">Disco</button>
+      <button class="btn ghost" data-builtin="afro-118">Afro</button>
+      <button class="btn ghost" data-builtin="deep-121">Deep</button>
+      <button class="btn ghost" data-builtin="techno-128">Techno</button>
     </div>
     <div class="track-meta" data-meta>No track loaded</div>
     <div class="platter-wrap">
@@ -253,6 +302,7 @@ input[type=range]{accent-color:var(--accent)}
       <div class="fader"><span class="label">DECK VOLUME</span><input type="range" data-vol min="0" max="1" step="0.01" value="0.85"/></div>
       <div class="fader"><span class="label">CUE SEND</span>
         <label class="toggle" style="padding:4px 6px;border:0;background:transparent"><input type="checkbox" data-cuesend checked/> Route to headphones</label>
+        <label class="toggle" style="padding:4px 6px;border:0;background:transparent"><input type="checkbox" data-drift/> Worn record (tempo drifts)</label>
       </div>
     </div>
   </section>
@@ -265,11 +315,71 @@ input[type=range]{accent-color:var(--accent)}
       <li>Load a track on Deck A, hit Play.</li>
       <li>Load a second track on Deck B. Hold <b>CUE</b> to preview in your headphones (split-cue).</li>
       <li>Drag the pitch fader on Deck B until the tempo sounds close.</li>
-      <li>Tap <b>Nudge +</b> / <b>Nudge −</b> to push the beat into phase.</li>
+      <li>Tap <b>Nudge +</b> / <b>Nudge −</b> or <b>drag the platter</b> to push the beat into phase.</li>
       <li>Release CUE on a downbeat, slide the crossfader, and keep nudging to hold phase.</li>
       <li>Switch to <b>Vinyl</b> mode to hide BPM numbers and mix purely by ear.</li>
     </ol>
   </details>
+  <div class="learn">
+    <details>
+      <summary>📚 Lesson 1 — Hear which record is faster</summary>
+      <div class="body">
+        Before you can match, you must reliably hear <b>which deck is ahead</b>. Load two records, play both, and just listen for a minute.
+        <ul>
+          <li>If the beats "gallop" (ba-da…ba-da), they're close but not matched.</li>
+          <li>The kick that lands <b>early</b> belongs to the faster record. If B's kick pulls ahead of A's, B is fast — pitch it down.</li>
+          <li>Drill: set B's pitch anywhere, guess "faster or slower" out loud, then hit <b>Reveal BPM</b> to check. Ten reps. This one skill is 80% of beatmatching.</li>
+        </ul>
+      </div>
+    </details>
+    <details>
+      <summary>📚 Lesson 2 — Ride the pitch, don't set it</summary>
+      <div class="body">
+        Beginners hunt for the "perfect" fader position. It doesn't exist — real records drift (turn on <b>Worn record</b> to simulate it).
+        <ul>
+          <li>Get roughly close with the fader, then stop staring at it.</li>
+          <li>Correct drift with <b>small nudges</b> (platter drag or nudge buttons), and only move the fader when you keep having to nudge the <b>same direction</b> — that means your base tempo is off.</li>
+          <li>Nudge fixes <b>phase</b> (beats landing together right now). Fader fixes <b>tempo</b> (whether they stay together). Learn to feel which problem you have.</li>
+        </ul>
+      </div>
+    </details>
+    <details>
+      <summary>📚 Lesson 3 — Cueing like vinyl</summary>
+      <div class="body">
+        On turntables you drop the record on a downbeat by hand. Simulate it:
+        <ul>
+          <li>Hold <b>CUE</b> on the incoming deck — it plays from the cue point while held, and snaps back on release. That's your needle-drop rehearsal.</li>
+          <li>Release-and-rehold in rhythm: "…3, 4, drop". When your drops consistently land on A's downbeat, press <b>Play</b> instead of releasing.</li>
+          <li>Set the cue point on the first kick of a phrase (use <b>Set Cue</b> while paused for precision).</li>
+        </ul>
+      </div>
+    </details>
+    <details>
+      <summary>📚 Lesson 4 — The long blend (the Hunee/Antal move)</summary>
+      <div class="body">
+        Dekmantel-style sets live on long, patient blends across genres and tempos:
+        <ul>
+          <li>Keep both records matched for <b>2+ minutes</b> before finishing the transition. Set a timer. If phase slips, nudge — don't restart.</li>
+          <li>Swap basslines with EQ: cut the incoming deck's <b>LOW</b>, blend mids/highs first, then trade the bass in one move on a phrase boundary.</li>
+          <li>Try blending Disco (≈114) into Afro (≈118): pitch disco up ~+3.5%, or afro down. Hear how much character pitch changes — that's a real decision vinyl DJs make.</li>
+        </ul>
+      </div>
+    </details>
+    <details>
+      <summary>📚 Practice ladder — from "I suck" to confident</summary>
+      <div class="body">
+        <ol>
+          <li><b>Faster/slower drill</b> (Easy mode) — 10 correct guesses in a row.</li>
+          <li><b>Trainer, Warm-up</b> — score 80+ three times in a row.</li>
+          <li><b>Trainer, Club</b> — score 80+ three times in a row, no phase meter.</li>
+          <li><b>Blind blend</b> — Vinyl mode, hold a blend 2 minutes, bass swap, no reveals.</li>
+          <li><b>Trainer, Dekmantel</b> — worn records that drift while you match. Score 70+ here and you're genuinely beatmatching.</li>
+          <li><b>Cross-genre</b> — disco→afro→house→techno, climbing 114→128, one blend each.</li>
+        </ol>
+        Little and often beats marathon sessions: 15 focused minutes a day.
+      </div>
+    </details>
+  </div>
 </footer>
 
 <script id="app-script">
@@ -406,13 +516,17 @@ async function detectBpm(buffer){
 }
 
 // ===== Built-in loop synth ===================================================
-async function buildLoop(kind){
-  const presets = {
-    "techno-128": { bpm:128, bars:4, style:"techno" },
-    "house-124":  { bpm:124, bars:4, style:"house" },
-    "tech-126":   { bpm:126.4, bars:4, style:"techhouse" },
-  };
-  const p = presets[kind]; if (!p) return null;
+// Non-round BPMs on purpose: real records rarely sit on integers.
+const LOOP_PRESETS = {
+  "house-124":  { bpm:124.0, bars:8, style:"house",  label:"House 12\"" },
+  "disco-114":  { bpm:113.6, bars:8, style:"disco",  label:"Boogie 12\"" },
+  "afro-118":   { bpm:117.8, bars:8, style:"afro",   label:"Afro LP" },
+  "deep-121":   { bpm:121.3, bars:8, style:"deep",   label:"Deep House 12\"" },
+  "techno-128": { bpm:128.0, bars:8, style:"techno", label:"Techno 12\"" },
+};
+async function buildLoop(kind, bpmOverride){
+  const base = LOOP_PRESETS[kind]; if (!base) return null;
+  const p = Object.assign({}, base, bpmOverride ? { bpm: bpmOverride } : null);
   const sr = 44100;
   const secPerBeat = 60/p.bpm;
   const totalBeats = p.bars*4;
@@ -471,25 +585,121 @@ async function buildLoop(kind){
     o.connect(lp).connect(g).connect(master);
     o.start(t); o.stop(t+len+0.02);
   };
-  // Pattern generation
+  const addSnare = (t) => {
+    const n = Math.floor(sr*0.18);
+    const noise = off.createBuffer(1, n, sr);
+    const nd = noise.getChannelData(0);
+    for (let i=0;i<n;i++) nd[i] = Math.random()*2-1;
+    const src = off.createBufferSource(); src.buffer = noise;
+    const bp = off.createBiquadFilter(); bp.type="bandpass"; bp.frequency.value=2200; bp.Q.value=0.6;
+    const g = off.createGain();
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(0.45, t+0.003);
+    g.gain.exponentialRampToValueAtTime(0.0001, t+0.15);
+    src.connect(bp).connect(g).connect(master);
+    // tonal body
+    const o = off.createOscillator(); o.type="triangle"; o.frequency.setValueAtTime(190,t);
+    const og = off.createGain();
+    og.gain.setValueAtTime(0.25, t);
+    og.gain.exponentialRampToValueAtTime(0.0001, t+0.09);
+    o.connect(og).connect(master);
+    src.start(t); src.stop(t+0.2); o.start(t); o.stop(t+0.1);
+  };
+  const addShaker = (t, vel=0.2) => {
+    const n = Math.floor(sr*0.06);
+    const noise = off.createBuffer(1, n, sr);
+    const nd = noise.getChannelData(0);
+    for (let i=0;i<n;i++) nd[i] = Math.random()*2-1;
+    const src = off.createBufferSource(); src.buffer = noise;
+    const hp = off.createBiquadFilter(); hp.type="bandpass"; hp.frequency.value=9000; hp.Q.value=1.2;
+    const g = off.createGain();
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(vel, t+0.005);
+    g.gain.exponentialRampToValueAtTime(0.0001, t+0.05);
+    src.connect(hp).connect(g).connect(master);
+    src.start(t); src.stop(t+0.06);
+  };
+  const addConga = (t, freq, vel=0.4) => {
+    const o = off.createOscillator(); o.type="sine";
+    o.frequency.setValueAtTime(freq*1.15, t);
+    o.frequency.exponentialRampToValueAtTime(freq, t+0.03);
+    const g = off.createGain();
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(vel, t+0.005);
+    g.gain.exponentialRampToValueAtTime(0.0001, t+0.16);
+    o.connect(g).connect(master);
+    o.start(t); o.stop(t+0.18);
+  };
+  const addStab = (t, rootHz, len=0.22, vel=0.16) => {
+    // minor7-ish chord stab through a lowpass
+    [1, 1.1892, 1.4983, 1.7818].forEach((ratio, i)=>{
+      const o = off.createOscillator(); o.type="sawtooth";
+      o.frequency.value = rootHz*ratio;
+      o.detune.value = (i%2? 6 : -6);
+      const lp = off.createBiquadFilter(); lp.type="lowpass"; lp.frequency.value=1600; lp.Q.value=1;
+      const g = off.createGain();
+      g.gain.setValueAtTime(0.0001, t);
+      g.gain.exponentialRampToValueAtTime(vel, t+0.008);
+      g.gain.exponentialRampToValueAtTime(0.0001, t+len);
+      o.connect(lp).connect(g).connect(master);
+      o.start(t); o.stop(t+len+0.02);
+    });
+  };
+
+  // Pattern generation. `swing` delays every off-16th, giving disco/afro their roll.
+  const sixteenth = secPerBeat/4;
+  const swing = p.style==="disco" ? 0.16 : (p.style==="afro" ? 0.10 : 0);
+  const sw = (idx16) => (idx16 % 2 === 1 ? swing * sixteenth : 0);
   for (let beat=0; beat<totalBeats; beat++){
     const t = beat*secPerBeat;
-    // 4-on-the-floor kick
-    addKick(t);
-    // closed hat on 8ths
-    addHat(t + secPerBeat/2);
-    if (p.style!=="techno") addHat(t, false);
-    // clap on 2 and 4
-    if (beat%2===1) addClap(t);
-    // bass on offbeat eighths
-    const notes = [55, 55, 62, 58];
-    const note = notes[Math.floor(beat/4)%notes.length];
-    addBass(t + secPerBeat/2, secPerBeat*0.45, note);
-    // occasional open hat for house
-    if (p.style==="house" && beat%4===2) addHat(t+secPerBeat/2, true);
+    const bar = Math.floor(beat/4), beatInBar = beat%4;
+    if (p.style==="house"){
+      addKick(t);
+      addHat(t + secPerBeat/2);
+      addHat(t, false);
+      if (beat%2===1) addClap(t);
+      const notes = [55, 55, 62, 58];
+      addBass(t + secPerBeat/2, secPerBeat*0.45, notes[bar%notes.length]);
+      if (beat%4===2) addHat(t+secPerBeat/2, true);
+    } else if (p.style==="techno"){
+      addKick(t);
+      addHat(t + secPerBeat/2);
+      if (beat%2===1) addClap(t);
+      addBass(t + secPerBeat/2, secPerBeat*0.4, 49);
+      if (bar>=4) addShaker(t + secPerBeat*0.75, 0.15);
+    } else if (p.style==="disco"){
+      addKick(t);
+      if (beatInBar===1 || beatInBar===3) addSnare(t);
+      for (let s=0;s<4;s++) addHat(t + s*sixteenth + sw(beat*4+s), s%2===0);
+      // boogie octave bass: root on beat, octave on the off-8th
+      const roots = [55, 55, 49, 52];
+      const root = roots[bar%roots.length];
+      addBass(t, secPerBeat*0.3, root);
+      addBass(t + secPerBeat/2 + sw(1), secPerBeat*0.28, root*2);
+      if (beatInBar===0 && bar%2===0) addStab(t + secPerBeat*1.5, 220, 0.3, 0.12);
+    } else if (p.style==="afro"){
+      // syncopated kick: 1, the "and" of 2, 3
+      if (beatInBar===0 || beatInBar===2) addKick(t);
+      if (beatInBar===1) addKick(t + secPerBeat/2);
+      for (let s=0;s<4;s++) addShaker(t + s*sixteenth + sw(beat*4+s), s===0?0.28:0.16);
+      // conga tumbao-ish
+      const congaPat = [[0,196],[0.75,147],[1.5,196],[2,147],[2.5,196],[3.25,165],[3.5,196]];
+      if (beatInBar===0) congaPat.forEach(([off,f])=> addConga(t + off*secPerBeat, f, 0.32));
+      if (beatInBar===3) addClap(t);
+      const roots = [49, 49, 55, 52];
+      addBass(t + secPerBeat/2, secPerBeat*0.4, roots[bar%roots.length]);
+    } else if (p.style==="deep"){
+      addKick(t);
+      addShaker(t + secPerBeat/2, 0.2);
+      if (beat%2===1) addClap(t);
+      const roots = [41, 41, 46, 44];
+      const root = roots[bar%roots.length];
+      addBass(t + secPerBeat*0.5, secPerBeat*0.8, root);
+      if (beatInBar===1 || beatInBar===3) addStab(t + secPerBeat/2, 175, 0.25, 0.1);
+    }
   }
   const rendered = await off.startRendering();
-  return { buffer: rendered, meta: { name: kind, bpm: p.bpm } };
+  return { buffer: rendered, meta: { name: (p.label||kind) + " · " + p.bpm.toFixed(1) + " BPM", bpm: p.bpm, kind } };
 }
 
 // ===== Deck ==================================================================
@@ -511,6 +721,10 @@ class Deck {
     this.cueSend = true;
     // detected BPM of track
     this.bpm = null;
+    // "worn record" tempo drift
+    this.driftAmt = 0;        // percent amplitude, 0 = off
+    this.driftVal = 0;        // current drift in percent
+    this.driftSeed = name === "A" ? 0.9 : 2.7;
     // nodes
     this.nodes = null;
   }
@@ -555,13 +769,13 @@ class Deck {
   }
   _applyRate(){
     if (!this.source) return;
-    const rate = 1 + (this.pitch + this.nudge)/100;
+    const rate = 1 + (this.pitch + this.nudge + this.driftVal)/100;
     this.source.playbackRate.setTargetAtTime(rate, this.engine.ctx.currentTime, 0.02);
   }
   currentPos(){
     if (!this.buffer) return 0;
     if (!this.playing) return this.offset;
-    const rate = 1 + (this.pitch + this.nudge)/100;
+    const rate = 1 + (this.pitch + this.nudge + this.driftVal)/100;
     const pos = this.offset + (this.engine.ctx.currentTime - this.startedAt)*rate;
     return pos % this.buffer.duration;
   }
@@ -605,10 +819,24 @@ class Deck {
   setCrossGain(g){ this.crossGain = g; if (this.nodes) this.nodes.xfade.gain.value = g; }
   setCueSend(on){ this.cueSend = on; if (this.nodes) this.nodes.cue.gain.value = on ? 1 : 0; }
   setEQ(band, db){ if (this.nodes) this.nodes[band].gain.value = db; }
+  setDrift(on){ this.driftAmt = on ? 0.35 : 0; if (!on){ this.driftVal = 0; this._applyRate(); } }
+  updateDrift(now){
+    if (!this.driftAmt || !this.playing) return;
+    // two slow sines: short wobble + long pressing warp
+    this.driftVal = this.driftAmt * (0.6*Math.sin(2*Math.PI*now/13 + this.driftSeed)
+                                   + 0.4*Math.sin(2*Math.PI*now/47 + this.driftSeed*2));
+    this._applyRate();
+  }
+  // beat phase in [0,1) — valid for built-in loops whose grid starts at 0
+  beatPhase(){
+    if (!this.bpm || !this.buffer) return null;
+    const secPerBeat = 60/this.bpm;
+    return (this.currentPos()/secPerBeat) % 1;
+  }
   // effective current BPM considering pitch/nudge
   currentBpm(){
     if (!this.bpm) return null;
-    return this.bpm * (1 + (this.pitch + this.nudge)/100);
+    return this.bpm * (1 + (this.pitch + this.nudge + this.driftVal)/100);
   }
 }
 
@@ -789,6 +1017,136 @@ function wireDeck(name){
     inp.addEventListener("input", e=> d.setEQ(inp.dataset.eq, Number(e.target.value)));
   });
   deckEl.querySelector("[data-cuesend]").addEventListener("change", e=> d.setCueSend(e.target.checked));
+  deckEl.querySelector("[data-drift]").addEventListener("change", e=> d.setDrift(e.target.checked));
+
+  // Platter drag = vinyl-style nudge. Spin with the record to push, against it to hold back.
+  const platter = deckEl.querySelector(".platter");
+  let dragging = false, lastAngle = 0, lastMove = 0;
+  const angleAt = (e)=>{
+    const r = platter.getBoundingClientRect();
+    return Math.atan2(e.clientY-(r.top+r.height/2), e.clientX-(r.left+r.width/2));
+  };
+  platter.addEventListener("pointerdown", (e)=>{
+    dragging = true; lastAngle = angleAt(e); lastMove = performance.now();
+    platter.setPointerCapture(e.pointerId);
+    e.preventDefault();
+  });
+  platter.addEventListener("pointermove", (e)=>{
+    if (!dragging) return;
+    let delta = angleAt(e) - lastAngle;
+    if (delta > Math.PI) delta -= 2*Math.PI;
+    if (delta < -Math.PI) delta += 2*Math.PI;
+    lastAngle += delta; lastMove = performance.now();
+    // clockwise (positive delta) = push forward
+    const deg = delta*180/Math.PI;
+    d.setNudge(Math.max(-8, Math.min(8, deg*0.25)));
+  });
+  const endDrag = ()=>{ if (dragging){ dragging=false; d.setNudge(0); } };
+  platter.addEventListener("pointerup", endDrag);
+  platter.addEventListener("pointercancel", endDrag);
+  // decay nudge if the finger rests without moving
+  setInterval(()=>{ if (dragging && performance.now()-lastMove>80 && d.nudge!==0) d.setNudge(d.nudge*0.5); }, 60);
+}
+
+// ===== Beatmatch Trainer ====================================================
+const trainer = {
+  active: false,
+  configs: {
+    easy:   { range: 0.02, minOff: 0.005, sameGenre: true,  drift: false, mode: "medium" },
+    normal: { range: 0.04, minOff: 0.008, sameGenre: false, drift: false, mode: "vinyl" },
+    hard:   { range: 0.06, minOff: 0.010, sameGenre: false, drift: true,  mode: "vinyl" },
+  },
+  stats: JSON.parse(localStorage.getItem("vinylTrainerStats") || '{"attempts":0,"best":null,"streak":0}'),
+  saveStats(){ localStorage.setItem("vinylTrainerStats", JSON.stringify(this.stats)); },
+  el(sel){ return document.querySelector(sel); },
+  renderStats(){
+    this.el("[data-tr-streak]").textContent = "Streak: " + this.stats.streak;
+    this.el("[data-tr-best]").textContent = "Best: " + (this.stats.best==null ? "—" : this.stats.best);
+    this.el("[data-tr-attempts]").textContent = "Attempts: " + this.stats.attempts;
+  },
+  async start(){
+    const diff = this.el("[data-tr-difficulty]").value;
+    const cfg = this.configs[diff];
+    const kinds = Object.keys(LOOP_PRESETS);
+    const kindA = kinds[Math.floor(Math.random()*kinds.length)];
+    const kindB = cfg.sameGenre ? kindA : kinds[Math.floor(Math.random()*kinds.length)];
+    const bpmA = LOOP_PRESETS[kindA].bpm;
+    // secret offset for deck B, never dead-on
+    const sign = Math.random()<0.5 ? -1 : 1;
+    const off = sign * (cfg.minOff + Math.random()*(cfg.range-cfg.minOff));
+    const bpmB = Math.round(bpmA*(1+off)*10)/10;
+    this.el("[data-tr-result]").textContent = "Building records...";
+    this.el("[data-tr-score]").textContent = "";
+    engine.ensure();
+    const [resA, resB] = await Promise.all([buildLoop(kindA), buildLoop(kindB, bpmB)]);
+    resB.meta.name = "Mystery record (" + LOOP_PRESETS[kindB].label + ")";
+    ["A","B"].forEach(n=>{
+      const deckEl = document.getElementById("deck"+n);
+      decks[n].stop(true);
+      deckEl.querySelector("[data-pitch]").value = 0;
+      decks[n].setPitch(0);
+      updatePitchLabel(deckEl, 0);
+      deckEl.querySelector('[data-action="play"]').classList.remove("on");
+      deckEl.querySelector('[data-action="play"]').textContent = "Play";
+      deckEl.querySelector("[data-platter]").classList.remove("on");
+      deckEl.querySelector("[data-drift]").checked = cfg.drift;
+      decks[n].setDrift(cfg.drift);
+    });
+    await attachBufferToDeck("A", resA.buffer, resA.meta);
+    await attachBufferToDeck("B", resB.buffer, resB.meta);
+    setMode(cfg.mode);
+    // no peeking at deck B while the challenge runs
+    document.querySelector('#deckB [data-action="reveal"]').disabled = true;
+    document.querySelector('#deckA [data-action="play"]').click();
+    this.active = true;
+    this.el("[data-tr-grade]").disabled = false;
+    this.el("[data-tr-result]").innerHTML =
+      "Deck A is playing. Hold <b>CUE</b> on Deck B, match the tempo with the pitch fader, " +
+      "get the beats locked, then press Play on B and hit <b>Grade me</b>.";
+  },
+  grade(){
+    if (!this.active) return;
+    const a = decks.A, b = decks.B;
+    if (!a.playing || !b.playing){
+      this.el("[data-tr-result]").innerHTML = "Both decks need to be <b>playing together</b> when you grade — matching in the headphones is step one, the drop is the exam.";
+      return;
+    }
+    const effA = a.currentBpm(), effB = b.currentBpm();
+    const bpmErrPct = Math.abs(effB-effA)/effA*100;
+    let ph = a.beatPhase()-b.beatPhase();
+    ph = ph - Math.round(ph); // wrap to [-0.5, 0.5]
+    const phaseErr = Math.abs(ph);
+    const tempoScore = 70*Math.max(0, 1 - bpmErrPct/2);
+    const phaseScore = 30*Math.max(0, 1 - phaseErr/0.25);
+    const score = Math.round(tempoScore + phaseScore);
+    this.stats.attempts++;
+    if (this.stats.best==null || score>this.stats.best) this.stats.best = score;
+    this.stats.streak = score>=80 ? this.stats.streak+1 : 0;
+    this.saveStats(); this.renderStats();
+    const scoreEl = this.el("[data-tr-score]");
+    scoreEl.textContent = score + " / 100";
+    scoreEl.className = "score " + (score>=80 ? "good" : score>=55 ? "mid" : "bad");
+    let tip;
+    if (bpmErrPct>0.6 && phaseErr<=0.12) tip = "Phase was decent but the tempos differ — it would drift apart within a bar. When you keep nudging the same direction, move the fader instead.";
+    else if (bpmErrPct<=0.3 && phaseErr>0.12) tip = "Tempo is basically matched — you just dropped out of phase. Practice releasing CUE exactly on Deck A's downbeat, then one small nudge to lock.";
+    else if (score>=80) tip = "That would hold on a real system. Try one difficulty up, or hold it for two minutes before grading.";
+    else if (score>=60) tip = (a.driftAmt||b.driftAmt)
+      ? "Close — the worn records drifted on you between locking and grading. That's the real skill: keep listening after you think you're done, and ride it."
+      : "Close. Tighten the last bit with nudges only — micro-corrections, then wait a full bar and listen before correcting again.";
+    else tip = "Go back to the headphones: hold CUE, listen for the gallop, and decide faster-or-slower before touching anything.";
+    const dir = effB>effA ? "fast" : "slow";
+    this.el("[data-tr-result]").innerHTML =
+      `Deck A was <b>${effA.toFixed(1)}</b>, your Deck B landed at <b>${effB.toFixed(1)}</b> ` +
+      `(${bpmErrPct.toFixed(2)}% ${dir}). Beat offset: <b>${(phaseErr*100).toFixed(0)}%</b> of a beat. ${tip}`;
+    this.active = false;
+    this.el("[data-tr-grade]").disabled = true;
+    document.querySelector('#deckB [data-action="reveal"]').disabled = false;
+  },
+};
+function wireTrainer(){
+  trainer.el("[data-tr-start]").addEventListener("click", ()=> trainer.start());
+  trainer.el("[data-tr-grade]").addEventListener("click", ()=> trainer.grade());
+  trainer.renderStats();
 }
 
 function wireMixer(){
@@ -854,20 +1212,32 @@ function triggerCue(name, down){
   b.dispatchEvent(ev);
 }
 
-// Phase & diff meter (runs ~30fps)
+// Phase & diff meter + drift (runs at display rate)
+let driftFrame = 0;
 function loop(){
+  // worn-record drift: update every few frames to keep setTargetAtTime calls cheap
+  if (engine.ctx && (++driftFrame % 4 === 0)){
+    const now = engine.ctx.currentTime;
+    decks.A.updateDrift(now);
+    decks.B.updateDrift(now);
+  }
   const a = decks.A.currentBpm();
   const b = decks.B.currentBpm();
   const diffEl = document.querySelector("[data-diffval]");
   if (a && b){
     const diff = b - a;
     diffEl.textContent = (diff>=0?"+":"") + diff.toFixed(2);
-    // Update drift phase: integrate beat drift per frame
-    const dt = 1/30;
-    const beatsDriftPerSec = diff/60;
-    state.phaseOffset += beatsDriftPerSec * dt;
-    // Wrap into [-0.5, 0.5] beats for display
-    let p = state.phaseOffset - Math.round(state.phaseOffset);
+    let p;
+    if (decks.A.playing && decks.B.playing){
+      // true phase from the known beat grids
+      p = decks.A.beatPhase() - decks.B.beatPhase();
+      p = p - Math.round(p);
+    } else {
+      // fall back to integrated tempo-drift estimate
+      const beatsDriftPerSec = diff/60;
+      state.phaseOffset += beatsDriftPerSec / 30;
+      p = state.phaseOffset - Math.round(state.phaseOffset);
+    }
     const dot = document.querySelector("[data-phase]");
     const pct = 50 + p*100; // -0.5..0.5 -> 0..100
     dot.style.left = `calc(${pct}% - 5px)`;
@@ -895,7 +1265,7 @@ function loop(){
 }
 
 // Boot
-wireDeck("A"); wireDeck("B"); wireMixer(); wireKeys();
+wireDeck("A"); wireDeck("B"); wireMixer(); wireKeys(); wireTrainer();
 setMode("vinyl");
 requestAnimationFrame(loop);
 
